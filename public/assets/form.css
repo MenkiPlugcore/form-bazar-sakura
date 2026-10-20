@@ -1,0 +1,76 @@
+.form-page {
+  --ink: #12643e;
+  --ink-dark: #0c4e2f;
+  --sage: #e5edde;
+  min-height: 100vh;
+  background: #f3f5ef;
+  border-top: 5px solid #17643f;
+  color: #224b38;
+}
+.registration-main { width: min(720px, calc(100% - 36px)); margin: 28px auto 0; }
+.registration-header { display: flex; align-items: center; gap: 23px; margin: 0 12px 23px; }
+.school-logo { flex: 0 0 108px; object-fit: contain; background: white; border-radius: 7px; }
+.registration-header .eyebrow { color: #6e816e; font-size: 9px; letter-spacing: 1.8px; }
+.registration-header h1 { margin: 5px 0 7px; font-size: 34px; letter-spacing: -.9px; line-height: 1.18; }
+.event-theme { font-family: var(--serif); font-size: 18px; line-height: 1.4; color: #71816a; margin: 0 0 5px; }
+.school-name { font-size: 10px; margin: 0; color: #78806f; }
+.compact-event { display: grid; grid-template-columns: 1.1fr 1fr; gap: 22px; padding: 18px 23px; margin-bottom: 19px; background: #e7edde; border: 1px solid #d9e2ce; border-radius: 9px; }
+.compact-event p { margin: 0; }
+.event-label { display: block; font-size: 8px; font-weight: 600; letter-spacing: 1.3px; color: #748569; margin-bottom: 3px; }
+.compact-event strong { display: block; font-size: 12px; font-weight: 600; color: #28503d; }
+.compact-event small { display: block; font-size: 9px; margin-top: 4px; line-height: 1.8; color: #75806c; }
+.form-page .form-card { padding: 27px 31px; border-color: #dce3d4; border-radius: 10px; box-shadow: 0 6px 24px #294b3510; }
+.form-page .form-steps { padding-bottom: 20px; margin-bottom: 23px; }
+.form-page .form-steps li { font-size: 12px; gap: 10px; }
+.form-page .form-steps li span { width: 29px; height: 29px; font-size: 11px; }
+.form-page legend { font-size: 28px; margin-bottom: 9px; }
+.form-page .form-subtitle { font-size: 11px; line-height: 1.9; margin-bottom: 22px; }
+.form-page .field { margin-bottom: 20px; }
+.form-page .field > label, .form-page .field-label { font-size: 12px; }
+.form-page input:not([type=checkbox]):not([type=radio]), .form-page select { font-size: 14px; min-height: 47px; padding: 11px 13px; }
+.form-page .field small { font-size: 10px; }
+.form-page .choice { font-size: 12px; padding: 12px; gap: 10px; }
+.form-page .choice-grid { gap: 9px; }
+.form-page .inline-note { font-size: 11px; }
+.form-page .consent { font-size: 11px; }
+.form-page .consent small { font-size: 10px; }
+.form-page .review-box h3 { font-size: 12px; }
+.form-page .review-box dl { font-size: 11px; grid-template-columns: 110px 1fr; }
+.form-page .form-navigation { margin-top: 22px; padding-top: 20px; }
+.form-page .form-navigation .button { font-size: 12px; min-height: 45px; padding-inline: 20px; }
+.form-page .form-navigation > span { font-size: 10px; }
+.form-page .form-footnote { font-size: 9px; }
+.saved-ticket-link { display: flex; width: fit-content; margin: 0 auto 17px; font-size: 12px; }
+.registration-footer { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 19px 3px 25px; color: #79816f; font-size: 9px; }
+.registration-footer a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.form-page fieldset[data-step="0"] { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+.form-page fieldset[data-step="0"] legend, .form-page fieldset[data-step="0"] .form-subtitle, .form-page fieldset[data-step="0"] .field:last-child { grid-column: 1 / -1; }
+.form-page fieldset[data-step="0"] .field:nth-of-type(2) { margin-bottom: 17px; }
+.brand img { object-fit: contain; }
+@media (max-width: 600px) {
+  .registration-main { width: calc(100% - 28px); margin-top: 21px; }
+  .registration-header { flex-direction: column; gap: 12px; text-align: center; margin: 0 0 20px; }
+  .school-logo { width: 91px; height: 82px; flex-basis: auto; }
+  .registration-header .eyebrow { font-size: 8px; }
+  .registration-header h1 { font-size: 29px; margin-top: 7px; letter-spacing: -.8px; }
+  .event-theme { font-size: 17px; }
+  .school-name { font-size: 9px; }
+  .compact-event { grid-template-columns: 1fr; gap: 13px; padding: 16px 18px; margin-bottom: 16px; }
+  .compact-event strong { font-size: 12px; }
+  .compact-event small { font-size: 10px; margin-top: 2px; }
+  .form-page .form-card { padding: 23px 19px; }
+  .form-page .form-steps { gap: 9px; }
+  .form-page .form-steps li { font-size: 10px; gap: 7px; }
+  .form-page .form-steps li span { width: 25px; height: 25px; font-size: 10px; }
+  .form-page legend { font-size: 27px; }
+  .form-page fieldset[data-step="0"] { display: block; }
+  .form-page input:not([type=checkbox]):not([type=radio]), .form-page select { font-size: 16px; min-height: 48px; }
+  .form-page .choice { font-size: 11px; padding: 12px 10px; }
+  .form-page .review-box dl { grid-template-columns: 95px 1fr; }
+  .form-page .form-navigation .button { padding-inline: 16px; }
+  .form-page .form-navigation .button-ghost { padding-inline: 0; }
+  .registration-footer { font-size: 8px; padding-block: 18px 25px; }
+}
+@media print {
+  .form-page { border: 0; background: white; }
+}

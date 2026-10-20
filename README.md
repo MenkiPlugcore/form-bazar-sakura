@@ -8,7 +8,7 @@ Disiapkan untuk **Cloudflare Pages + Pages Functions + D1**. Tanpa dependensi bu
 
 ## Yang tersedia
 
-- Landing page responsif, informasi acara, pengenalan TK / SD, dan FAQ.
+- Halaman langsung ke formulir peserta, dengan logo resmi SAKURA dan informasi singkat acara di atasnya. Responsif untuk ponsel dan komputer.
 - Form tiga langkah: data peserta → mengenal SAKURA → referral dan persetujuan.
 - Pertanyaan pernah mendengar SAKURA, sumber informasi sekolah, hubungan dengan sekolah, kelompok usia anak, dan minat informasi TK / SD.
 - **Sumber informasi sekolah terpisah dari referral stand.** Mengenal sekolah dari Instagram dan diundang Stand 03 tercatat sebagai dua informasi berbeda.

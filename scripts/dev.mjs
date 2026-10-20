@@ -13,7 +13,7 @@ let vars={};
 try{for(const line of(await readFile(resolve(root,'.dev.vars'),'utf8')).split('\n')){const match=line.match(/^([A-Z_]+)\s*=\s*['"]?(.*?)['"]?\s*$/);if(match)vars[match[1]]=match[2];}}catch{}
 const env={DB,ADMIN_PASSWORD:'sakura-local-development-only',SESSION_SECRET:'local-development-session-key-at-least-32-characters',...vars};
 const args=process.argv.slice(2);const port=Number(process.env.PORT||args[args.indexOf('--port')+1])||4173;
-const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.json':'application/json','.txt':'text/plain; charset=utf-8'};
+const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.json':'application/json','.txt':'text/plain; charset=utf-8'};
 const publicDir=resolve(root,'public');
 const security={ 'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'strict-origin-when-cross-origin','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" };
 const server=http.createServer(async(req,res)=>{
