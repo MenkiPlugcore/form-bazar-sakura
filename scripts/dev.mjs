@@ -3,15 +3,17 @@ import { readFile, mkdir, stat } from 'node:fs/promises';
 import { resolve, extname, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Readable } from 'node:stream';
-import { localD1 } from './d1-local.mjs';
+import { localPostgres } from './postgres-local.mjs';
+import { bundleAuth } from './bundle-auth.mjs';
 import { handleRequest } from '../server/api.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 await mkdir(resolve(root,'.local'),{recursive:true});
-const DB=localD1(resolve(root,'.local/dev.sqlite'));
-await DB.exec(await readFile(resolve(root,'migrations/0001_initial.sql'),'utf8'));
+await bundleAuth();
+const DB=await localPostgres(resolve(root,'.local/postgres'));
+await DB.exec(await readFile(resolve(root,'migrations/0001_neon.sql'),'utf8'));
 let vars={};
 try{for(const line of(await readFile(resolve(root,'.dev.vars'),'utf8')).split('\n')){const match=line.match(/^([A-Z_]+)\s*=\s*['"]?(.*?)['"]?\s*$/);if(match)vars[match[1]]=match[2];}}catch{}
-const env={DB,ADMIN_PASSWORD:'sakura-local-development-only',SESSION_SECRET:'local-development-session-key-at-least-32-characters',...vars};
+const env={DB,SESSION_SECRET:'local-development-rate-limit-key-at-least-32-characters',...vars};
 const args=process.argv.slice(2);const port=Number(process.env.PORT||args[args.indexOf('--port')+1])||4173;
 const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.json':'application/json','.txt':'text/plain; charset=utf-8'};
 const publicDir=resolve(root,'public');
@@ -31,4 +33,4 @@ const server=http.createServer(async(req,res)=>{
   }catch{res.writeHead(404,{'Content-Type':'text/plain'});res.end('Halaman tidak ditemukan.');}
 });
 server.listen(port,'0.0.0.0',()=>console.log(`SAKURA local preview ready on port ${port}. Local data stays in .local/; never used in production.`));
-for(const signal of['SIGINT','SIGTERM'])process.on(signal,()=>server.close(()=>{DB.close();process.exit(0);}));
+for(const signal of['SIGINT','SIGTERM'])process.on(signal,()=>server.close(async()=>{await DB.close();process.exit(0);}));

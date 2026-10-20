@@ -1,0 +1,10 @@
+import { neon } from '@neondatabase/serverless';
+import { readFile } from 'node:fs/promises';
+const connection=process.env.DATABASE_URL_UNPOOLED||process.env.DATABASE_URL;
+if(!connection)throw new Error('Set DATABASE_URL_UNPOOLED ke koneksi langsung Neon di environment lokal.');
+if(new URL(connection).hostname.includes('-pooler.'))throw new Error('Migrasi menggunakan koneksi Neon langsung, bukan pooled.');
+const sql=neon(connection);
+const migration=await readFile(new URL('../migrations/0001_neon.sql',import.meta.url),'utf8');
+const statements=migration.split(';').map(s=>s.trim()).filter(Boolean);
+await sql.transaction(statements.map(statement=>sql.query(statement,[])));
+console.log('Schema Neon dan 10 stand siap. Data peserta tidak dihapus.');

@@ -1,11 +1,12 @@
-import { CHILD_STAGES, RELATIONS, SOURCES, INTERESTS, labelFor, normalizePhone } from './shared.js';
+import { CHILD_STAGES, RELATIONS, SOURCES, INTERESTS, labelFor, normalizePhone, normalizeStandCode } from './shared.js';
 import { api, escapeHTML as esc, qrSvg, download, toast, setupDialogs } from './common.js';
 
 const $ = (selector) => document.querySelector(selector);
 const form = $('#registration-form');
 let step = 0, config = null, currentTicket = null, submitting = false;
 const stages = [ ['fullName','phone','domicile','relation','childStages'], ['knownSchool','schoolSource','sourceOther','interest'], ['standCode','privacyConsent'] ];
-const referral = new URLSearchParams(location.search).get('ref')?.trim().toUpperCase();
+const rawReferral = new URLSearchParams(location.search).get('ref');
+const referral = normalizeStandCode(rawReferral);
 
 function fillOptions(id, options) { const select = $(id); options.forEach(([value,label])=>select.add(new Option(label,value))); }
 fillOptions('#relation',RELATIONS); fillOptions('#schoolSource',SOURCES.filter(([key])=>key!=='first_time'));
@@ -91,7 +92,7 @@ async function loadConfig() {
     select.disabled=!config.registrationOpen;
     $('#submit-button').disabled=!config.registrationOpen;
     if(!config.registrationOpen){notice.textContent=config.ready?'Pendaftaran saat ini ditutup. Silakan hubungi panitia.':'Formulir belum dibuka. Silakan kembali setelah panitia menyiapkan pendaftaran.';notice.hidden=false;}
-    else {notice.hidden=true;if(referral){if(config.stands.some((s)=>s.code===referral)){select.value=referral;$('#referral-hint').textContent='Referral terisi dari tautan undangan. Pastikan nama stand sudah sesuai.';}else{notice.textContent='Kode referral pada tautan tidak ditemukan atau tidak aktif. Pilih stand yang mengundang pada tahap konfirmasi.';notice.hidden=false;}}}
+    else {notice.hidden=true;if(rawReferral){if(referral&&config.stands.some((s)=>s.code===referral)){select.value=referral;$('#referral-hint').textContent='Referral terisi dari tautan undangan. Pastikan nama stand sudah sesuai.';}else{notice.textContent='Kode referral pada tautan tidak ditemukan atau tidak aktif. Pilih stand yang mengundang pada tahap konfirmasi.';notice.hidden=false;}}}
     updateReferral();
   } catch {
     notice.replaceChildren(document.createTextNode('Daftar stand belum berhasil dimuat. Periksa koneksi, lalu '));
@@ -111,9 +112,9 @@ form.addEventListener('submit',async(event)=>{
     try{sessionStorage.setItem('sakura-ticket',JSON.stringify(currentTicket));}catch{}
     $('#reopen-ticket').hidden=false; form.reset();goTo(0,false);updateSource();updateReferral();showTicket();
   } catch(error) {
-    const first=Object.keys(error.fields)[0];const errorStep=stages.findIndex((names)=>names.includes(first));
+    const first=Object.keys(error.fields||{})[0];const errorStep=stages.findIndex((names)=>names.includes(first));
     if(errorStep>=0)goTo(errorStep);
-    showFieldErrors(error.fields);$('#form-error').textContent=error.message||'Koneksi terputus. Coba kembali saat internet stabil.';$('#form-error').hidden=false;
+    showFieldErrors(error.fields||{});$('#form-error').textContent=error.message||'Koneksi terputus. Coba kembali saat internet stabil.';$('#form-error').hidden=false;
   } finally {submitting=false;button.disabled=!config?.registrationOpen;button.innerHTML='Daftar sekarang <span aria-hidden="true">↗</span>';button.removeAttribute('aria-busy');}
 });
 

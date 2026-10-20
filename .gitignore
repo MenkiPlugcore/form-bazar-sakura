@@ -10,3 +10,6 @@ wrangler.toml
 wrangler.jsonc
 .openai/
 *.log
+/public/assets/admin-auth.bundle.js
+.neon
+.neon_local/

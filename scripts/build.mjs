@@ -1,8 +1,10 @@
 import { cp, mkdir, rm, access, readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { bundleAuth } from './bundle-auth.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 await access(resolve(root,'public/assets/qr.js'));
+await bundleAuth();
 await rm(resolve(root,'dist'),{recursive:true,force:true});
 await mkdir(resolve(root,'dist'),{recursive:true});
 await cp(resolve(root,'public'),resolve(root,'dist'),{recursive:true});

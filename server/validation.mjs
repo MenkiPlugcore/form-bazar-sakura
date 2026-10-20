@@ -1,4 +1,4 @@
-import { CHILD_STAGES, INTERESTS, RELATIONS, SOURCES, normalizePhone } from '../public/assets/shared.js';
+import { CHILD_STAGES, INTERESTS, RELATIONS, SOURCES, normalizePhone, normalizeStandCode } from '../public/assets/shared.js';
 
 export class ApiError extends Error {
   constructor(status, message, fields = {}) { super(message); this.status = status; this.fields = fields; }
@@ -11,7 +11,7 @@ export function validateRegistration(input) {
   const fullName = clean(input.fullName, 80);
   const domicile = clean(input.domicile, 120);
   const phone = normalizePhone(input.phone);
-  const standCode = clean(input.standCode, 16).toUpperCase();
+  const standCode = normalizeStandCode(input.standCode);
   const sourceOther = clean(input.sourceOther, 160);
   const childStages = Array.isArray(input.childStages) ? [...new Set(input.childStages)] : [];
   if (fullName.length < 3 || fullName.length > 80) fields.fullName = 'Isi nama lengkap, 3–80 karakter.';
@@ -24,7 +24,7 @@ export function validateRegistration(input) {
   if (!includes(SOURCES, schoolSource)) fields.schoolSource = 'Pilih sumber informasi tentang sekolah.';
   if (schoolSource === 'other' && (sourceOther.length < 2 || sourceOther.length > 160)) fields.sourceOther = 'Ceritakan sumber informasinya, 2–160 karakter.';
   if (!includes(INTERESTS, input.interest)) fields.interest = 'Pilih ketertarikan pada informasi sekolah.';
-  if (!/^SAKURA(?:0[1-9]|10)$/.test(standCode)) fields.standCode = 'Pilih kode referral dari stand yang mengundang.';
+  if (!standCode) fields.standCode = 'Pilih kode referral dari stand yang mengundang.';
   if (input.privacyConsent !== true) fields.privacyConsent = 'Persetujuan pendataan acara diperlukan untuk mendaftar.';
   if (input.contactConsent !== undefined && typeof input.contactConsent !== 'boolean') fields.contactConsent = 'Pilihan persetujuan tidak valid.';
   if (Object.keys(fields).length) throw new ApiError(422, 'Periksa kembali bagian yang ditandai.', fields);

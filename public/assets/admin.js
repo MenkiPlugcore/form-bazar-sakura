@@ -1,22 +1,48 @@
-import { CHILD_STAGES, RELATIONS, SOURCES, INTERESTS, labelFor } from './shared.js';
+import { CHILD_STAGES, RELATIONS, SOURCES, INTERESTS, ADMIN_EMAIL, labelFor } from './shared.js';
 import { api, escapeHTML as esc, qrSvg, download, toast, setupDialogs, formatDate } from './common.js';
+import { signInOwner, activateOwner, verifyOwnerEmail, sendOwnerOtp, requestPasswordReset, resetOwnerPassword, signOutOwner, restoreOwnerSession, getAdminToken } from './admin-auth.bundle.js';
 const $=(selector)=>document.querySelector(selector);
-let csrf='',stats=null,tab='overview',page=1,total=0,participants=[],loadId=0,sharedStand=null;
+let stats=null,tab='overview',page=1,total=0,participants=[],loadId=0,sharedStand=null;
+let authMode='login',authReady=false;
 setupDialogs();
 async function authorized(path,options={}) {
-  try {return await api(path,{...options,headers:{...options.headers,...(options.method&&options.method!=='GET'?{'X-CSRF-Token':csrf}:{})}});}
-  catch(error){if(error.status===401){showLogin();$('#login-error').textContent=error.message;$('#login-error').hidden=false;}throw error;}
+  try {
+    const send=async(force=false)=>api(path,{...options,headers:{...options.headers,Authorization:`Bearer ${await getAdminToken(force)}`}});
+    try{return await send();}catch(error){if(error.status===401)return await send(true);throw error;}
+  }catch(error){if(error.status===401){showLogin();$('#login-error').textContent=error.message;$('#login-error').hidden=false;}throw error;}
 }
-function showLogin(){csrf='';stats=null;participants=[];document.querySelectorAll('dialog[open]').forEach((el)=>el.close());$('#dashboard-view').hidden=true;$('#login-view').hidden=false;$('#password').value='';$('#participants-body').replaceChildren();$('#participant-details').replaceChildren();}
+function clearSecrets(){for(const id of['password','password-confirm','otp'])$('#'+id).value='';}
+function showLogin(){stats=null;participants=[];document.querySelectorAll('dialog[open]').forEach((el)=>el.close());$('#dashboard-view').hidden=true;$('#login-view').hidden=false;clearSecrets();$('#participants-body').replaceChildren();$('#participant-details').replaceChildren();}
 function showError(error){$('#dashboard-error').textContent=error.message||'Koneksi terputus. Coba muat ulang.';$('#dashboard-error').hidden=false;}
-async function showDashboard(){ $('#login-view').hidden=true;$('#dashboard-view').hidden=false;$('#password').value='';await refresh(); }
+async function showDashboard(){await authorized('/api/admin/session');$('#login-view').hidden=true;$('#dashboard-view').hidden=false;clearSecrets();await refresh();}
+const modes={login:['Masuk admin.','Kelola peserta, nama stand, referral, dan laporan acara.','Masuk dashboard ↗'],setup:['Aktivasi admin.','Buat kata sandi pertama, lalu verifikasi email. Kata sandi ini digunakan untuk login selanjutnya.','Buat akun & kirim kode ↗'],verify:['Verifikasi email.','Masukkan kode yang dikirim ke menkiestes@gmail.com. Setelah terverifikasi, masuk dengan kata sandi yang dibuat.','Verifikasi email ↗'],forgot:['Pulihkan akses.','Kode pemulihan akan dikirim ke email admin.','Kirim kode pemulihan ↗'],reset:['Kata sandi baru.','Isi kode dari email, lalu buat kata sandi pengganti minimal 12 karakter.','Simpan kata sandi ↗']};
+function setAuthMode(mode){
+  authMode=mode;clearSecrets();$('#login-error').hidden=true;$('#auth-notice').hidden=true;
+  const [heading,description,button]=modes[mode];$('#auth-heading').textContent=heading;$('#auth-description').textContent=description;$('#login-button').textContent=button;$('#login-button').disabled=!authReady;
+  const showPassword=['login','setup','reset'].includes(mode),showConfirm=['setup','reset'].includes(mode),showOtp=['verify','reset'].includes(mode);
+  $('#password-field').hidden=!showPassword;$('#password').required=showPassword;$('#password').minLength=mode==='login'?1:12;$('#password').autocomplete=mode==='login'?'current-password':'new-password';$('#password-label').textContent=mode==='login'?'Kata sandi':'Kata sandi baru (minimal 12 karakter)';
+  $('#password-confirm-field').hidden=!showConfirm;$('#password-confirm').required=showConfirm;$('#otp-field').hidden=!showOtp;$('#otp').required=showOtp;
+  $('#auth-setup-mode').hidden=mode!=='login';$('#auth-forgot-mode').hidden=mode!=='login';$('#auth-login-mode').hidden=mode==='login';$('#auth-resend').hidden=!showOtp;
+}
+function notifyAuth(message){$('#auth-notice').textContent=message;$('#auth-notice').hidden=false;}
+$('#auth-setup-mode').addEventListener('click',()=>setAuthMode('setup'));$('#auth-forgot-mode').addEventListener('click',()=>setAuthMode('forgot'));$('#auth-login-mode').addEventListener('click',()=>setAuthMode('login'));
+$('#auth-resend').addEventListener('click',async()=>{const button=$('#auth-resend');button.disabled=true;$('#login-error').hidden=true;try{if(authMode==='reset')await requestPasswordReset();else await sendOwnerOtp();notifyAuth('Kode baru dikirim. Periksa inbox dan folder spam email admin.');}catch(error){$('#login-error').textContent=error.message;$('#login-error').hidden=false;}finally{button.disabled=false;}});
 $('#login-form').addEventListener('submit',async(event)=>{
-  event.preventDefault();const button=$('#login-button');button.disabled=true;button.textContent='Memeriksa akses…';$('#login-error').hidden=true;
-  try{const data=await api('/api/admin/login',{method:'POST',body:JSON.stringify({password:$('#password').value})});csrf=data.csrf;await showDashboard();}
-  catch(error){$('#login-error').textContent=error.message||'Tidak dapat terhubung. Coba lagi.';$('#login-error').hidden=false;}
-  finally{button.disabled=false;button.innerHTML='Masuk dashboard <span aria-hidden="true">↗</span>';}
+  event.preventDefault();if(!authReady)return;const button=$('#login-button');button.disabled=true;button.textContent='Memproses…';$('#login-error').hidden=true;$('#auth-notice').hidden=true;
+  try{
+    if(['setup','reset'].includes(authMode)&&$('#password').value!==$('#password-confirm').value)throw new Error('Pengulangan kata sandi belum sesuai.');
+    if(authMode==='login'){
+      const data=await signInOwner($('#password').value);
+      if(data?.user?.emailVerified!==true){await sendOwnerOtp();setAuthMode('verify');notifyAuth('Email perlu diverifikasi. Kode dikirim ke email admin.');}
+      else await showDashboard();
+    }else if(authMode==='setup'){await activateOwner($('#password').value);setAuthMode('verify');notifyAuth('Akun disiapkan. Periksa kode di inbox atau folder spam email admin.');}
+    else if(authMode==='verify'){await verifyOwnerEmail($('#otp').value);setAuthMode('login');notifyAuth('Email berhasil diverifikasi. Silakan masuk dengan kata sandi yang tadi dibuat.');}
+    else if(authMode==='forgot'){await requestPasswordReset();setAuthMode('reset');notifyAuth('Jika akun sudah terdaftar, kode pemulihan dikirim ke email admin.');}
+    else if(authMode==='reset'){await resetOwnerPassword($('#otp').value,$('#password').value);setAuthMode('login');notifyAuth('Kata sandi diperbarui. Silakan masuk kembali.');}
+  }catch(error){$('#login-error').textContent=error.message||'Tidak dapat terhubung. Coba lagi.';$('#login-error').hidden=false;}
+  finally{button.disabled=!authReady;button.textContent=modes[authMode][2];}
 });
-$('#logout').addEventListener('click',async()=>{try{await authorized('/api/admin/logout',{method:'POST',body:'{}'});showLogin();toast('Berhasil keluar.');}catch(error){showError(error);}});
+$('#logout').addEventListener('click',async()=>{try{await signOutOwner();showLogin();setAuthMode('login');toast('Berhasil keluar.');}catch(error){showError(error);}});
 
 function changeTab(next){tab=next;document.querySelectorAll('.tab-panel').forEach((el)=>el.hidden=el.id!==`tab-${tab}`);document.querySelectorAll('[data-tab]').forEach((el)=>{el.classList.toggle('is-active',el.dataset.tab===tab);if(el.dataset.tab===tab)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});$('#current-tab').textContent={overview:'Ringkasan',participants:'Daftar peserta',stands:'Stand & referral'}[tab];if(tab==='participants')loadParticipants().catch(showError);}
 document.querySelectorAll('[data-tab],[data-go]').forEach((el)=>el.addEventListener('click',()=>changeTab(el.dataset.tab||el.dataset.go)));
@@ -41,7 +67,7 @@ function renderStats(){
 function renderStands(){
   $('#stands-body').innerHTML=stats.stands.map((stand)=>`<tr><td><strong>${esc(stand.name)}</strong><small>${esc(stand.code)}${stand.class_name?` · ${esc(stand.class_name)}`:''}</small>${stand.owner?`<small>${esc(stand.owner)}</small>`:''}${!stand.active?'<span class="status-label is-off">Nonaktif</span>':''}</td><td>${stand.total}</td><td>${stand.present}</td><td>${stand.public_present}</td><td>${stand.target_present}</td><td><span class="status-label ${stand.public_present>=3&&stand.target_present>=1?'is-good':''}">${stand.public_present>=3&&stand.target_present>=1?'✓ Terpenuhi':'Belum'}</span></td><td><div class="stand-actions"><button class="row-button" data-edit="${stand.code}" type="button">Edit</button><button class="row-button" data-share="${stand.code}" type="button">Tautan / QR ↗</button></div></td></tr>`).join('');
 }
-function renderStandFilter(){const select=$('#filter-stand'),value=select.value;select.replaceChildren(new Option('Semua stand',''));[...stats.stands].sort((a,b)=>a.code.localeCompare(b.code)).forEach((s)=>select.add(new Option(s.name,s.code)));select.value=value;}
+function renderStandFilter(){const select=$('#filter-stand'),value=select.value;select.replaceChildren(new Option('Semua stand',''));[...stats.stands].sort((a,b)=>a.position-b.position).forEach((s)=>select.add(new Option(s.name,s.code)));select.value=value;}
 $('#stands-body').addEventListener('click',(event)=>{const edit=event.target.closest('[data-edit]'),share=event.target.closest('[data-share]');if(edit)editStand(edit.dataset.edit);if(share)shareStand(share.dataset.share);});
 function editStand(code){const stand=stats.stands.find((s)=>s.code===code);if(!stand)return;$('#stand-dialog-title').textContent=code;$('#edit-code').value=code;$('#edit-name').value=stand.name;$('#edit-owner').value=stand.owner;$('#edit-class').value=stand.class_name;$('#edit-active').checked=!!stand.active;$('#stand-error').hidden=true;$('#stand-dialog').showModal();}
 $('#stand-form').addEventListener('submit',async(event)=>{event.preventDefault();const button=$('#save-stand');button.disabled=true;$('#stand-error').hidden=true;try{await authorized(`/api/admin/stands/${$('#edit-code').value}`,{method:'PATCH',body:JSON.stringify({name:$('#edit-name').value,owner:$('#edit-owner').value,className:$('#edit-class').value,active:$('#edit-active').checked})});$('#stand-dialog').close();toast('Informasi stand diperbarui.');await refresh();}catch(error){$('#stand-error').textContent=error.message;$('#stand-error').hidden=false;}finally{button.disabled=false;}});
@@ -75,5 +101,9 @@ function showDetails(id){
   const rows=[['Kode bukti',p.ticket_code],['WhatsApp','+'+p.phone],['Domisili',p.domicile],['Hubungan',labelFor(RELATIONS,p.relation)],['Usia anak',p.child_stages.map((v)=>labelFor(CHILD_STAGES,v)).join(', ')],['Kenal SAKURA',p.known_school==='yes'?'Sudah pernah':'Baru mengetahui sekarang'],['Sumber sekolah',p.school_source==='other'?p.source_other:labelFor(SOURCES,p.school_source)],['Minat TK / SD',labelFor(INTERESTS,p.interest)],['Izin dihubungi PPDB',p.contact_consent?'Ya, bersedia':'Tidak memberikan persetujuan'],['Stand referral',`${p.stand_name} · ${p.stand_code}`],['Mendaftar',formatDate(p.created_at)],['Kehadiran',formatDate(p.checked_in_at)],['Souvenir',formatDate(p.souvenir_at)],['Versi persetujuan',p.consent_version]];
   $('#participant-details').innerHTML=rows.map(([label,value])=>`<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`).join('');$('#participant-dialog').showModal();
 }
-$('#export-csv').addEventListener('click',()=>{location.href=`/api/admin/export?${participantParams()}`;});
-try{const session=await api('/api/admin/session');csrf=session.csrf;await showDashboard();}catch(error){showLogin();if(error.status===503){$('#login-error').textContent=error.message;$('#login-error').hidden=false;}}
+$('#export-csv').addEventListener('click',async()=>{const button=$('#export-csv');button.disabled=true;try{const response=await fetch(`/api/admin/export?${participantParams()}`,{headers:{Authorization:`Bearer ${await getAdminToken()}`},credentials:'same-origin'});if(!response.ok){const data=await response.json();throw new Error(data.error||'Ekspor gagal.');}download('Peserta-SORGA-SAKURA.csv',await response.blob(),'text/csv;charset=utf-8');toast('Spreadsheet CSV diunduh.');}catch(error){showError(error);}finally{button.disabled=false;}});
+try{
+  const config=await api('/api/admin/auth-config');authReady=config.ready;$('#email').value=ADMIN_EMAIL;setAuthMode('login');
+  if(!authReady)throw new Error('Akses admin belum siap. Hubungi pengelola untuk menyambungkan database.');
+  const user=await restoreOwnerSession();if(user?.email?.toLowerCase()===ADMIN_EMAIL&&user.emailVerified===true)await showDashboard();
+}catch(error){showLogin();$('#login-error').textContent=error.message||'Layanan login belum dapat dihubungi.';$('#login-error').hidden=false;}

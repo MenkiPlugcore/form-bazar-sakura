@@ -1,3 +1,9 @@
+export const ADMIN_EMAIL = 'menkiestes@gmail.com';
+export const INSTAGRAM_ACCOUNTS = ['tk_shibghahakhlakquran','sds_shibghahakhlakquran'];
+export function normalizeStandCode(value) {
+  const match=String(value||'').trim().toUpperCase().match(/^SAKURA(?:0([1-9])|([1-9]|10))$/);
+  return match ? `SAKURA${match[1]||match[2]}` : null;
+}
 export const EVENT = Object.freeze({
   name: 'Parenting SORGA Akbar',
   title: 'Ketika Ibu Juga Ingin Menangis',

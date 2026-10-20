@@ -1,11 +1,5 @@
-# Optional CLI development config. Copy to wrangler.toml (gitignored), then fill the ID.
-# For dashboard deployment, configure DB under Pages > Settings > Bindings instead.
+# Optional CLI config. Copy to wrangler.toml (gitignored).
+# Set DATABASE_URL as a secret; do not add database credentials to this file.
 name = "form-bazar-sakura"
 pages_build_output_dir = "./dist"
 compatibility_date = "2026-10-01"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "sakura-sorga"
-database_id = "REPLACE_WITH_REAL_D1_DATABASE_ID"
-migrations_dir = "migrations"

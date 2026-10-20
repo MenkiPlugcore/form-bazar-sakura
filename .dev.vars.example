@@ -1,5 +1,5 @@
 # Local use only. Copy to .dev.vars and replace these example values.
-ADMIN_PASSWORD="replace-with-at-least-16-characters"
+DATABASE_URL="postgresql://USER:PASSWORD@HOST-pooler.ap-southeast-1.aws.neon.tech/sakura?sslmode=require"
 SESSION_SECRET="replace-with-a-random-secret-of-at-least-32-characters"
 EVENT_VENUE="Area Sekolah SAKURA"
 REGISTRATION_OPEN="true"
