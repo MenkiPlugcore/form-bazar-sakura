@@ -13,13 +13,13 @@ Form peserta **“Ketika Ibu Juga Ingin Menangis”**, Ahad **8 November 2026**,
 - Tautan `/?ref=SAKURA3` mengisi referral otomatis. Tautan versi awal seperti `SAKURA03` tetap diterima dan disimpan sebagai `SAKURA3`.
 - Pertanyaan pernah mengenal sekolah, sumber informasi sekolah, kelompok usia anak, hubungan dengan SAKURA, dan minat TK / SD. Sumber informasi sekolah dan referral stand dicatat terpisah.
 - Bukti pendaftaran QR, unduh SVG, cetak / simpan PDF. Satu WhatsApp untuk satu peserta.
-- Setelah berhasil mendaftar, muncul ajakan follow Instagram **opsional**: [TK SAKURA](https://www.instagram.com/tk_shibghahakhlakquran/) dan [SD SAKURA](https://www.instagram.com/sds_shibghahakhlakquran/). Tidak ada syarat follow atau pemeriksaan akun Instagram.
+- Pada langkah **SAKURA**, muncul ajakan follow Instagram **opsional**: [TK SAKURA](https://www.instagram.com/tk_shibghahakhlakquran/) dan [SD SAKURA](https://www.instagram.com/sds_shibghahakhlakquran/). Tidak ada syarat follow atau pemeriksaan akun Instagram.
 - `/admin/`: aktivasi email dan kata sandi pertama, verifikasi kode email, login, lupa kata sandi, daftar peserta, statistik, check-in, souvenir, serta unduh spreadsheet CSV.
 - Admin dapat mengganti **nama stand, nama pemilik / penanggung jawab, kelas, dan status aktif**. Kode tetap sehingga riwayat peserta tidak terputus.
 - CSV mengikuti filter aktif, bisa dibuka di **Excel** atau diimpor ke **Google Sheets**. Database tidak dipublikasikan sebagai spreadsheet umum dan tidak melakukan sinkronisasi Google Sheets otomatis.
 
 ![Aktivasi admin pertama](docs/sakura-admin-activation.jpg)
-![Ajakan follow Instagram setelah berhasil mendaftar](docs/sakura-instagram-success.jpg)
+![Ajakan follow Instagram pada langkah SAKURA](docs/sakura-instagram-form.jpg)
 
 ## Neon yang disiapkan
 
