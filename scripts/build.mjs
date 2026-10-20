@@ -10,4 +10,4 @@ await mkdir(resolve(root,'dist'),{recursive:true});
 await cp(resolve(root,'public'),resolve(root,'dist'),{recursive:true});
 const routes=JSON.parse(await readFile(resolve(root,'dist/_routes.json'),'utf8'));
 if(!routes.include.includes('/api/*'))throw new Error('API routing is missing.');
-console.log('Build selesai: dist/ siap untuk Cloudflare Pages. Functions dibaca dari functions/.');
+console.log('Build selesai: aset dist/ siap. API Cloudflare Workers: server/worker.mjs.');

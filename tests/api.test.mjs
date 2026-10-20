@@ -6,6 +6,7 @@ import { createAdminVerifier, rewriteAuthCookie } from '../server/auth.mjs';
 import { ADMIN_EMAIL } from '../public/assets/shared.js';
 import { generateKeyPair, exportJWK, createLocalJWKSet, SignJWT } from 'jose';
 import { handleRequest, csvCell } from '../server/api.mjs';
+import worker from '../server/worker.mjs';
 const origin='https://sakura.example';
 const schema=await readFile(new URL('../migrations/0001_neon.sql',import.meta.url),'utf8');
 let env;
@@ -22,6 +23,20 @@ async function login(){return{Authorization:'Bearer '+await token()};}
 async function add(patch={}){const response=await request('/api/register',{method:'POST',body:valid(patch)});assert.equal(response.status,201,await response.clone().text());return(await response.json()).ticket;}
 
 test('configuration exposes ten active referral codes and no participant records',async()=>{const response=await request('/api/config');const data=await response.json();assert.equal(data.stands.length,10);assert.equal(data.stands[0].code,'SAKURA1');assert.equal(data.registrationOpen,true);assert.equal(data.stands[0].owner,undefined);const offline=await handleRequest(new Request(origin+'/api/config'),{});assert.equal((await offline.json()).registrationOpen,false);});
+test('Workers entry serves the real registration API and preserves admin protection',async()=>{
+  const workerEnv={...env,ASSETS:{fetch(){throw new Error('API must not be served as a static asset');}}};
+  const config=await worker.fetch(new Request(origin+'/api/config'),workerEnv);
+  assert.match(config.headers.get('Content-Type'),/application\/json/);
+  assert.equal((await config.json()).stands.length,10);
+  const response=await worker.fetch(new Request(origin+'/api/register',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(valid())}),workerEnv);
+  assert.equal(response.status,201);
+  const {ticket}=await response.json();
+  const stored=await env.DB.prepare('SELECT ticket_code, stand_code FROM registrations').first();
+  assert.equal(stored.ticket_code,ticket.code);
+  assert.equal(stored.stand_code,'SAKURA3');
+  assert.equal((await worker.fetch(new Request(origin+'/api/admin/participants'),workerEnv)).status,401);
+  assert.equal((await worker.fetch(new Request(origin+'/api/missing'),workerEnv)).status,404);
+});
 test('registration normalizes WhatsApp, preserves separate source/referral and separate consent',async()=>{const ticket=await add();assert.match(ticket.code,/^SG-[A-F0-9]{15}$/);const row=await env.DB.prepare('SELECT * FROM registrations').first();assert.equal(row.phone,'6281234567890');assert.equal(row.school_source,'instagram');assert.equal(row.stand_code,'SAKURA3');assert.equal(row.contact_consent,0);assert.equal(row.privacy_consent,1);assert.equal(ticket.phone,undefined);});
 test('new-to-school answer overrides source and never assumes PPDB consent',async()=>{await add({knownSchool:'no',schoolSource:'other',sourceOther:'Ignore this stale hidden answer'});const row=await env.DB.prepare('SELECT * FROM registrations').first();assert.equal(row.school_source,'first_time');assert.equal(row.source_other,'');assert.equal(row.contact_consent,0);});
 test('server rejects malformed fields, conflicting child ages, missing consent, and oversized bodies',async()=>{const invalid=await request('/api/register',{method:'POST',body:valid({fullName:'a',phone:'1234',childStages:['none','tk'],privacyConsent:false})});assert.equal(invalid.status,422);const fields=(await invalid.json()).fields;assert.ok(fields.phone&&fields.fullName&&fields.childStages&&fields.privacyConsent);assert.equal((await request('/api/register',{method:'POST',body:'{bad json'})).status,400);assert.equal((await request('/api/register',{method:'POST',body:JSON.stringify({padding:'x'.repeat(17000)})})).status,413);});

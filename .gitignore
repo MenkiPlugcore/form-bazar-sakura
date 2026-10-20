@@ -7,7 +7,6 @@ dist/
 .env.*
 !.env.example
 wrangler.toml
-wrangler.jsonc
 .openai/
 *.log
 /public/assets/admin-auth.bundle.js

@@ -1,4 +1,5 @@
-# Optional CLI config. Copy to wrangler.toml (gitignored).
+# Optional Pages CLI config: use --config wrangler.example.toml.
+# The default wrangler.jsonc deploys to Cloudflare Workers with the API enabled.
 # Set DATABASE_URL as a secret; do not add database credentials to this file.
 name = "form-bazar-sakura"
 pages_build_output_dir = "./dist"

@@ -2,7 +2,7 @@
 
 Form peserta **“Ketika Ibu Juga Ingin Menangis”**, Ahad **8 November 2026**, untuk Sekolah Shibghah Akhlak Quran (TK / SD). Halaman langsung membuka formulir dengan logo resmi sekolah.
 
-**Cloudflare Pages + Pages Functions + Neon Postgres + Neon Auth.** Semua peserta tersimpan di Neon melalui API server; database tidak diakses langsung dari browser.
+**Cloudflare Workers + Static Assets + Neon Postgres + Neon Auth.** Semua peserta tersimpan di Neon melalui API server; database tidak diakses langsung dari browser. Entry Pages sebelumnya tetap tersedia di `functions/api/`.
 
 ![Pratinjau formulir SAKURA](docs/sakura-preview-20261020.jpg)
 
@@ -36,26 +36,32 @@ Neon Auth sudah diaktifkan. Konfigurasi layanan publik ada di `server/deployment
 
 Schema aplikasi ada di [`migrations/0001_neon.sql`](migrations/0001_neon.sql). Migrasi menyiapkan sepuluh stand tanpa menimpa perubahan nama atau menghapus peserta. Berkas D1 lama disimpan di `migrations/legacy-d1/` untuk referensi, bukan dijalankan pada Neon.
 
-## Deploy Cloudflare Pages
+## Deploy Cloudflare Workers
 
-Hubungkan repository ini sebagai **Pages** melalui Git integration.
+Project Workers yang sudah terhubung ke repo ini dapat dipakai langsung. File **`wrangler.jsonc`** menyertakan entry backend `server/worker.mjs`, folder aset `dist/`, dan routing `/api/*`. Workers tidak membaca folder Pages `functions/` secara otomatis; tanpa entry Worker, hanya halaman statis yang ter-deploy dan Cloudflare menampilkan pesan **“Variables cannot be added to a Worker that only has static assets.”**
+
+Pada project **form-bazar-sakura**, buka **Settings → Builds**, lalu periksa Git integration dan pengaturan berikut:
 
 | Pengaturan | Nilai |
 | --- | --- |
+| Repository | `MenkiPlugcore/form-bazar-sakura` |
 | Production branch | `main` |
-| Framework preset | `None` |
 | Build command | `npm run build` |
-| Build output directory | `dist` |
+| Deploy command | `npm run deploy` |
 | Root directory | Root repo / kosong |
-| `NODE_VERSION` | `24` |
+| Build variable `NODE_VERSION` | `24` |
 
-Paket dipasang otomatis dari `package-lock.json`. Jika dibangun di komputer sendiri, jalankan `npm ci` lebih dulu. Direktori `functions/` dibaca oleh Pages dari root repo.
+Simpan pengaturan, lalu jalankan deployment dari commit terbaru. Jangan memakai deploy command yang hanya mengunggah folder aset. `npm run deploy` menjalankan Wrangler dengan konfigurasi repo sehingga **API dan aset** ikut ter-deploy pada Worker yang sama. Nama Worker di konfigurasi adalah `form-bazar-sakura` dan harus sesuai project dashboard.
+
+Paket dipasang otomatis dari `package-lock.json`. Jika dibangun di komputer sendiri, jalankan `npm ci`, `npm run build`, kemudian `npm run deploy`. Wrangler sudah dikunci versinya sebagai dependency pengembangan.
+
+Deployment awal boleh dilakukan sebelum secret database diisi: form akan menutup pendaftaran sampai database siap. Setelah Worker backend berhasil ter-deploy, tombol untuk menambah runtime Secret akan tersedia.
 
 ### Secret database
 
 Di Neon Console, buka project di atas → **Connect** → pilih database `sakura`, branch **production**, dan koneksi **Pooled**. Salin connection string.
 
-Di Cloudflare Pages → **Settings → Variables and Secrets → Production**, tambahkan:
+Di project Worker → **Settings → Runtime variables and secrets → Add**, pilih jenis **Secret**, lalu tambahkan:
 
 | Nama | Jenis | Keterangan |
 | --- | --- | --- |
@@ -65,9 +71,13 @@ Di Cloudflare Pages → **Settings → Variables and Secrets → Production**, t
 | `REGISTRATION_OPEN` | Variable, opsional | `true` membuka, `false` menutup pendaftaran. |
 | `NEON_AUTH_BASE_URL` | Variable, opsional | Bawaan sudah mengarah ke layanan Auth production yang disiapkan. Ubah hanya jika berpindah project / branch. |
 
-**Redeploy setelah mengisi secrets.** Binding D1 dan `ADMIN_PASSWORD` versi awal tidak dipakai lagi. Password admin baru dibuat sendiri melalui aktivasi; tidak dimasukkan ke Cloudflare atau GitHub.
+**Terapkan perubahan secrets ke deployment aktif** melalui tombol Deploy / Save and Deploy pada dashboard. Secret database dibutuhkan saat runtime; isilah pada **Runtime variables and secrets**, terpisah dari variabel build di bagian Builds. Variabel runtime yang disimpan lewat dashboard dipertahankan saat deploy berikutnya oleh `keep_vars: true`. Binding D1 dan `ADMIN_PASSWORD` versi awal tidak dipakai lagi. Password admin baru dibuat sendiri melalui aktivasi; tidak dimasukkan ke Cloudflare atau GitHub.
 
 Untuk deployment Preview, gunakan database dan Auth branch terpisah. Jangan menghubungkan preview yang dapat diubah orang lain ke data produksi. Jika belum menyiapkan backend preview, jangan mengisi `DATABASE_URL` produksi pada environment Preview.
+
+### Alternatif Pages
+
+Jika sudah memakai Pages, route `functions/api/[[route]].js` tetap tersedia dan menjalankan backend yang sama. Build command `npm run build`, output `dist`, framework `None`. Untuk CLI Pages, gunakan konfigurasi terpisah `--config wrangler.example.toml`; konfigurasi utama `wrangler.jsonc` ditujukan untuk Workers.
 
 ### Schema database
 
@@ -126,12 +136,13 @@ Buka `http://localhost:4173/`. Pengembangan formulir memakai Postgres lokal mela
 ```bash
 npm run build
 npm run check
+npx wrangler deploy --dry-run --outdir .local/worker-build
 npm test
 ```
 
-Tes menggunakan Postgres lokal dan token bertanda tangan dengan kunci khusus tes. Tes memeriksa validasi, normalisasi kode lama, database constraints, keunikan WhatsApp, penolakan akses tanpa verifikasi, email admin lain, issuer / audience salah, token kedaluwarsa, origin, whitelist proxy, rate limit, pengelolaan stand, check-in, souvenir, analitik, serta ekspor CSV lebih dari 500 baris.
+Tes menggunakan Postgres lokal dan token bertanda tangan dengan kunci khusus tes. Tes memeriksa pendaftaran melalui entry Workers hingga tersimpan di Postgres, validasi, normalisasi kode lama, database constraints, keunikan WhatsApp, penolakan akses tanpa verifikasi, email admin lain, issuer / audience salah, token kedaluwarsa, origin, whitelist proxy, rate limit, pengelolaan stand, check-in, souvenir, analitik, serta ekspor CSV lebih dari 500 baris. Dry-run Wrangler memeriksa bundling Worker tanpa mengunggah atau men-deploy ke akun Cloudflare.
 
-`npm run build` membundel SDK auth untuk browser; bundle dihasilkan otomatis dan tidak ditulis sebagai source manual. Worker Functions dibundel Cloudflare saat deploy.
+`npm run build` membundel SDK auth untuk browser; bundle dihasilkan otomatis dan tidak ditulis sebagai source manual. Entry backend dibundel Wrangler saat deploy dan tidak dimasukkan ke folder aset publik.
 
 ## Privasi dan penyimpanan
 
@@ -149,10 +160,12 @@ Data yang pernah tersimpan di D1 tidak dipindahkan otomatis oleh perubahan kode.
 public/               Form pengunjung, dashboard, logo, CSS dan JavaScript
 src/admin-auth.js     Integrasi SDK Neon Auth untuk antarmuka admin
 functions/api/        Route /api/* di Cloudflare Pages
+server/worker.mjs     Entry Cloudflare Workers: /api/* ke backend, lainnya ke aset
+wrangler.jsonc        Konfigurasi deploy Workers, tanpa credentials
 server/               Validasi, query Neon, proxy dan otorisasi admin
 migrations/           Schema Postgres; arsip schema D1 sebelumnya
 scripts/              Build, migrasi dan preview lokal
 tests/               Tes API dan otorisasi dengan Postgres lokal
 ```
 
-Dokumentasi resmi: [Neon serverless driver](https://neon.com/docs/serverless/serverless-driver), [Neon email OTP](https://neon.com/docs/auth/guides/plugins/email-otp), [Neon JWT](https://neon.com/docs/auth/guides/plugins/jwt), dan [Cloudflare Pages](https://developers.cloudflare.com/pages/get-started/git-integration/).
+Dokumentasi resmi: [Neon serverless driver](https://neon.com/docs/serverless/serverless-driver), [Neon email OTP](https://neon.com/docs/auth/guides/plugins/email-otp), [Neon JWT](https://neon.com/docs/auth/guides/plugins/jwt), dan [Cloudflare Workers dengan aset](https://developers.cloudflare.com/workers/static-assets/binding/).
