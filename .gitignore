@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.local/
+.wrangler/
+.dev.vars
+.env
+.env.*
+!.env.example
+wrangler.toml
+wrangler.jsonc
+.openai/
+*.log

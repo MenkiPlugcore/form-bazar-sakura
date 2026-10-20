@@ -1,0 +1,5 @@
+# Local use only. Copy to .dev.vars and replace these example values.
+ADMIN_PASSWORD="replace-with-at-least-16-characters"
+SESSION_SECRET="replace-with-a-random-secret-of-at-least-32-characters"
+EVENT_VENUE="Area Sekolah SAKURA"
+REGISTRATION_OPEN="true"

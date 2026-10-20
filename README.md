@@ -4,6 +4,8 @@ Website pendaftaran **“Ketika Ibu Juga Ingin Menangis”**, Ahad, **8 November
 
 Disiapkan untuk **Cloudflare Pages + Pages Functions + D1**. Tanpa dependensi build, tanpa Supabase, dan tanpa API berbayar. Pendaftaran benar-benar disimpan di database; tidak memakai penyimpanan browser sebagai database peserta.
 
+![Tampilan halaman SAKURA](docs/sakura-preview-20261020.jpg)
+
 ## Yang tersedia
 
 - Landing page responsif, informasi acara, pengenalan TK / SD, dan FAQ.

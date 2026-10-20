@@ -1,0 +1,14 @@
+{
+  "name": "form-bazar-sakura",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Registrasi Parenting SORGA Akbar dan referral bazar Sekolah SAKURA, untuk Cloudflare Pages + D1.",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check.mjs"
+  }
+}
