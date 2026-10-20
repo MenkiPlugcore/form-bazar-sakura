@@ -5,7 +5,7 @@ export function normalizeStandCode(value) {
   return match ? `SAKURA${match[1]||match[2]}` : null;
 }
 export const EVENT = Object.freeze({
-  name: 'Parenting SORGA Akbar',
+  name: 'Bazar. Sakura',
   title: 'Ketika Ibu Juga Ingin Menangis',
   date: 'Ahad, 8 November 2026',
   shortDate: '8 November 2026',
