@@ -1,5 +1,6 @@
 # Local use only. Copy to .dev.vars and replace these example values.
 DATABASE_URL="postgresql://USER:PASSWORD@HOST-pooler.ap-southeast-1.aws.neon.tech/sakura?sslmode=require"
 SESSION_SECRET="replace-with-a-random-secret-of-at-least-32-characters"
-EVENT_VENUE="Area Sekolah SAKURA"
+EVENT_VENUE="Perumahan Taman Cikunir Indah Blok F1 No. 11, RT 001/RW 011, Jakamulya, Bekasi Selatan, Kota Bekasi, Jawa Barat 17146"
+EVENT_MAPS_URL="https://www.google.com/maps?cid=16241703193603167624"
 REGISTRATION_OPEN="true"

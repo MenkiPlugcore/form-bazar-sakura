@@ -1,4 +1,4 @@
-import { EVENT, CHILD_STAGES, RELATIONS, SOURCES, INTERESTS, ADMIN_EMAIL, labelFor } from '../public/assets/shared.js';
+import { EVENT, CHILD_STAGES, RELATIONS, SOURCES, INTERESTS, ADMIN_EMAIL, labelFor, eventLocation } from '../public/assets/shared.js';
 import { ApiError, validateRegistration, validateStand } from './validation.mjs';
 import { databaseFor } from './database.mjs';
 import { requireAdmin, proxyAuth } from './auth.mjs';
@@ -72,7 +72,7 @@ async function register(request, env) {
   }
   return json({ ticket: { code: ticketCode, fullName: data.fullName, standCode: stand.code, standName: stand.name, createdAt }, event: eventFor(env) }, 201);
 }
-function eventFor(env) { return { ...EVENT, venue: env.EVENT_VENUE || EVENT.venue }; }
+function eventFor(env) { return { ...EVENT, ...eventLocation(env.EVENT_VENUE, env.EVENT_MAPS_URL) }; }
 
 async function getConfig(env) {
   let stands = [], ready = false;
