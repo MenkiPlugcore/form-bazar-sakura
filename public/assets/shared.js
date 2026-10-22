@@ -11,9 +11,22 @@ export const EVENT = Object.freeze({
   shortDate: '8 November 2026',
   bazaarTime: '07.00–12.30 WIB',
   mainTime: '09.00–10.30 WIB',
-  venue: 'Area Sekolah SAKURA',
+  venue: 'Perumahan Taman Cikunir Indah Blok F1 No. 11, RT 001/RW 011, Jakamulya, Bekasi Selatan, Kota Bekasi, Jawa Barat 17146',
+  mapsUrl: 'https://www.google.com/maps?cid=16241703193603167624',
   school: 'Sekolah Shibghah Akhlak Quran',
 });
+export function eventLocation(venue, mapsUrl) {
+  const configured = String(venue || '').trim();
+  // Old runtime variables and saved tickets may still contain the generic label.
+  const address = !configured || /^area sekolah sakura$/i.test(configured) ? EVENT.venue : configured;
+  const fallback = address === EVENT.venue ? EVENT.mapsUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  try {
+    const url = new URL(mapsUrl);
+    const hosts = ['www.google.com', 'google.com', 'maps.google.com', 'maps.app.goo.gl', 'goo.gl'];
+    if (url.protocol === 'https:' && hosts.includes(url.hostname) && !url.username && !url.password) return { venue: address, mapsUrl: url.href };
+  } catch { /* Use the map for the displayed address when no valid link is configured. */ }
+  return { venue: address, mapsUrl: fallback };
+}
 export const CHILD_STAGES = [
   ['preschool', 'Usia prasekolah (0–3 tahun)'],
   ['tk', 'Usia TK (4–6 tahun)'],

@@ -1,4 +1,4 @@
-import { CHILD_STAGES, RELATIONS, SOURCES, INTERESTS, labelFor, normalizePhone, normalizeStandCode } from './shared.js';
+import { CHILD_STAGES, RELATIONS, SOURCES, INTERESTS, labelFor, normalizePhone, normalizeStandCode, eventLocation } from './shared.js';
 import { api, escapeHTML as esc, qrSvg, download, toast, setupDialogs } from './common.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -86,7 +86,9 @@ async function loadConfig() {
   const notice=$('#config-notice');
   try {
     config=await api('/api/config');
+    config.event={...config.event,...eventLocation(config.event.venue,config.event.mapsUrl)};
     $('[data-venue]').textContent=config.event.venue;
+    $('[data-maps-link]').href=config.event.mapsUrl;
     const select=$('#standCode'); select.replaceChildren(new Option('Pilih kode / nama stand',''));
     config.stands.forEach((stand)=>select.add(new Option(`${stand.code} · ${stand.name}${stand.class_name ? ` (${stand.class_name})` : ''}`,stand.code)));
     select.disabled=!config.registrationOpen;
@@ -121,15 +123,28 @@ form.addEventListener('submit',async(event)=>{
 function showTicket() {
   if(!currentTicket)return;
   const ticket=currentTicket;
-  $('#ticket-paper').innerHTML=`<span class="eyebrow">${esc(ticket.event.name)}</span><h3>${esc(ticket.event.title)}</h3><p class="ticket-name">${esc(ticket.fullName)}</p>${qrSvg(ticket.code)}<strong class="ticket-code">${esc(ticket.code)}</strong><p>${esc(ticket.event.date)}</p><p>${esc(ticket.event.venue)}</p><p class="ticket-ref">Undangan ${esc(ticket.standName)} · ${esc(ticket.standCode)}</p>`;
+  ticket.event={...ticket.event,...eventLocation(config?.event.venue || ticket.event.venue,config?.event.mapsUrl || ticket.event.mapsUrl)};
+  $('#ticket-paper').innerHTML=`<span class="eyebrow">${esc(ticket.event.name)}</span><h3>${esc(ticket.event.title)}</h3><p class="ticket-name">${esc(ticket.fullName)}</p>${qrSvg(ticket.code)}<strong class="ticket-code">${esc(ticket.code)}</strong><p>${esc(ticket.event.date)}</p><p class="ticket-venue">${esc(ticket.event.venue)}</p><a class="venue-map-link" href="${esc(ticket.event.mapsUrl)}" target="_blank" rel="noopener noreferrer">Buka lokasi di Google Maps <span aria-hidden="true">↗</span></a><p class="ticket-ref">Undangan ${esc(ticket.standName)} · ${esc(ticket.standCode)}</p>`;
   $('#ticket-dialog').showModal();
+}
+function wrapText(value,limit) {
+  const lines=[]; let line='';
+  for(const word of String(value).split(/\s+/)) {
+    if((line+' '+word).length>limit&&line){lines.push(line);line=word;}
+    else line=line?`${line} ${word}`:word;
+  }
+  if(line)lines.push(line);
+  return lines;
 }
 $('#download-ticket').addEventListener('click',()=>{
   if(!currentTicket)return;const t=currentTicket;
-  const nameLines=[];let line='';for(const word of t.fullName.split(/\s+/)){if((line+' '+word).length>32&&line){nameLines.push(line);line=word;}else line=line?`${line} ${word}`:word;}if(line)nameLines.push(line);
+  const nameLines=wrapText(t.fullName,32);
+  const venueLines=wrapText(t.event.venue,58);
+  const mapsY=680+venueLines.length*22+8, referralY=mapsY+36, noteY=referralY+31;
+  const height=Math.max(850,noteY+65);
   // QR keeps the library viewBox so every generated module remains square.
   const nativeQr=qrSvg(t.code,190).replace('<svg ','<svg x="255" y="370" ');
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="700" height="850" viewBox="0 0 700 850"><rect width="700" height="850" rx="24" fill="#faf9f4"/><rect x="30" y="30" width="640" height="790" rx="18" fill="none" stroke="#b8c7ad" stroke-dasharray="5 5"/><g text-anchor="middle" fill="#214f43" font-family="Arial,sans-serif"><text x="350" y="95" font-size="16" letter-spacing="3">SEKOLAH SAKURA</text><text x="350" y="145" font-size="30" font-family="Georgia,serif">${esc(t.event.name)}</text><text x="350" y="187" font-size="19">Ketika Ibu Juga Ingin Menangis</text><text x="350" y="235" font-size="13" letter-spacing="2">BUKTI PENDAFTARAN</text>${nameLines.slice(0,3).map((l,i)=>`<text x="350" y="${285+i*29}" font-size="22">${esc(l)}</text>`).join('')}<text x="350" y="598" font-size="19" letter-spacing="2">${esc(t.code)}</text><text x="350" y="648" font-size="20">${esc(t.event.date)}</text><text x="350" y="680" font-size="15">${esc(t.event.venue)}</text><text x="350" y="724" font-size="14">Referral: ${esc(t.standCode)}</text><text x="350" y="755" font-size="12">Tunjukkan bukti ini kepada panitia saat datang.</text></g>${nativeQr}</svg>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="700" height="${height}" viewBox="0 0 700 ${height}"><rect width="700" height="${height}" rx="24" fill="#faf9f4"/><rect x="30" y="30" width="640" height="${height-60}" rx="18" fill="none" stroke="#b8c7ad" stroke-dasharray="5 5"/><g text-anchor="middle" fill="#214f43" font-family="Arial,sans-serif"><text x="350" y="95" font-size="16" letter-spacing="3">SEKOLAH SAKURA</text><text x="350" y="145" font-size="30" font-family="Georgia,serif">${esc(t.event.name)}</text><text x="350" y="187" font-size="19">Ketika Ibu Juga Ingin Menangis</text><text x="350" y="235" font-size="13" letter-spacing="2">BUKTI PENDAFTARAN</text>${nameLines.slice(0,3).map((l,i)=>`<text x="350" y="${285+i*29}" font-size="22">${esc(l)}</text>`).join('')}<text x="350" y="598" font-size="19" letter-spacing="2">${esc(t.code)}</text><text x="350" y="648" font-size="20">${esc(t.event.date)}</text>${venueLines.map((l,i)=>`<text x="350" y="${680+i*22}" font-size="15">${esc(l)}</text>`).join('')}<a href="${esc(t.event.mapsUrl)}" target="_blank" rel="noopener noreferrer"><text x="350" y="${mapsY}" font-size="15" text-decoration="underline">Buka lokasi di Google Maps ↗</text></a><text x="350" y="${referralY}" font-size="14">Referral: ${esc(t.standCode)}</text><text x="350" y="${noteY}" font-size="12">Tunjukkan bukti ini kepada panitia saat datang.</text></g>${nativeQr}</svg>`;
   download(`Bukti-SORGA-${t.code}.svg`,svg,'image/svg+xml');toast('Bukti pendaftaran berhasil diunduh.');
 });
 $('#print-ticket').addEventListener('click',()=>window.print());

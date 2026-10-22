@@ -13,6 +13,7 @@ Form peserta **“Ketika Ibu Juga Ingin Menangis”**, Ahad **8 November 2026**,
 - Tautan `/?ref=SAKURA3` mengisi referral otomatis. Tautan versi awal seperti `SAKURA03` tetap diterima dan disimpan sebagai `SAKURA3`.
 - Pertanyaan pernah mengenal sekolah, sumber informasi sekolah, kelompok usia anak, hubungan dengan SAKURA, dan minat TK / SD. Sumber informasi sekolah dan referral stand dicatat terpisah.
 - Bukti pendaftaran QR, unduh SVG, cetak / simpan PDF. Satu WhatsApp untuk satu peserta.
+- Alamat lengkap lokasi acara dan tautan **Buka lokasi di Google Maps** tersedia pada formulir dan bukti pendaftaran. Alamat panjang dibagi menjadi beberapa baris saat bukti diunduh.
 - Pada langkah **SAKURA**, muncul ajakan follow Instagram **opsional**: [TK SAKURA](https://www.instagram.com/tk_shibghahakhlakquran/) dan [SD SAKURA](https://www.instagram.com/sds_shibghahakhlakquran/). Tidak ada syarat follow atau pemeriksaan akun Instagram.
 - `/admin/`: aktivasi email dan kata sandi pertama, verifikasi kode email, login, lupa kata sandi, daftar peserta, statistik, check-in, souvenir, serta unduh spreadsheet CSV.
 - Admin dapat mengganti **nama stand, nama pemilik / penanggung jawab, kelas, dan status aktif**. Kode tetap sehingga riwayat peserta tidak terputus.
@@ -67,7 +68,8 @@ Di project Worker → **Settings → Runtime variables and secrets → Add**, pi
 | --- | --- | --- |
 | `DATABASE_URL` | **Secret, wajib** | Connection string Neon pooled. Jangan gunakan URL branch pengujian. |
 | `SESSION_SECRET` | Secret, disarankan | Nilai acak minimal 32 karakter untuk hash pembatasan percobaan. Jika tidak diisi, salt diturunkan dari konfigurasi server yang bersifat rahasia. |
-| `EVENT_VENUE` | Variable, opsional | Lokasi acara yang sudah dikonfirmasi. Bawaan: Area Sekolah SAKURA. |
+| `EVENT_VENUE` | Variable, opsional | Alamat lengkap lokasi acara. Bawaan: Perumahan Taman Cikunir Indah Blok F1 No. 11, RT 001/RW 011, Jakamulya, Bekasi Selatan, Kota Bekasi, Jawa Barat 17146. Nilai lama `Area Sekolah SAKURA` otomatis memakai alamat lengkap bawaan. |
+| `EVENT_MAPS_URL` | Variable, opsional | Tautan HTTPS Google Maps / shareloc. Bawaan mengarah ke pin SD SAKURA dari situs resmi sekolah. Jika hanya alamat yang diganti, Maps akan mencari alamat tersebut; ganti kedua variabel untuk pin lokasi baru yang tepat. |
 | `REGISTRATION_OPEN` | Variable, opsional | `true` membuka, `false` menutup pendaftaran. |
 | `NEON_AUTH_BASE_URL` | Variable, opsional | Bawaan sudah mengarah ke layanan Auth production yang disiapkan. Ubah hanya jika berpindah project / branch. |
 
@@ -96,7 +98,9 @@ Koneksi langsung untuk migrasi berbeda dengan pooled untuk aplikasi. Script tida
 2. Buka `/admin/` dan lakukan aktivasi di bawah.
 3. Di **Stand & referral → Edit**, isi nama stand dan pemilik aslinya.
 4. Bagikan tautan / QR dari domain akhir yang dipakai, misalnya `/?ref=SAKURA1`.
-5. Pastikan lokasi dan jadwal sesuai sebelum formulir disebarkan.
+5. Pastikan lokasi dan jadwal sesuai sebelum formulir disebarkan. Buka tombol Google Maps pada formulir dan bukti pendaftaran untuk memeriksa tujuan.
+
+Alamat bawaan mengacu pada [data SDS SAKURA Kemendikdasmen](https://referensi.data.kemendikdasmen.go.id/pendidikan/npsn/69963025), dengan pin SD yang ditautkan [situs resmi sekolah](https://sekolahsakura.sch.id/). Jika titik acara berada di lokasi berbeda, isi `EVENT_VENUE` dan `EVENT_MAPS_URL` sesuai lokasi yang ditetapkan panitia.
 
 ## Aktivasi dan login admin
 
